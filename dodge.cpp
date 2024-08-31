@@ -38,12 +38,24 @@ public:
   int getPos() { return col + row * 60; }
 };
 
+void createObstacle(std::deque<Obstacle> &obstacles) {
+  obstacles.push_back(Obstacle());
+  obstacles.push_back(Obstacle());
+  while (obstacles.back().getRow() ==
+         obstacles[obstacles.size() - 2].getRow()) {
+    obstacles.pop_back();
+    obstacles.push_back(Obstacle());
+  }
+}
+
 std::deque<Obstacle> moveObstacles(std::deque<Obstacle> obstacles) {
   for (int i = 0; i < obstacles.size(); i++) {
     obstacles[i].setCol(obstacles[i].getCol() - 1);
   }
-  if (obstacles[0].getCol() == -1)
+  if (obstacles[0].getCol() == -1) {
     obstacles.pop_front();
+    obstacles.pop_front();
+  }
   return obstacles;
 }
 
@@ -61,7 +73,9 @@ void drawTerminal(Player player, int objectsPassed,
     for (int c = 0; c < 60; c++) {
       if (c == 4 && player.getRow() == r &&
           (obstacles[0].getCol() != 4 ||
-           obstacles[0].getRow() != player.getRow())) {
+           obstacles[0].getRow() != player.getRow()) &&
+          (obstacles[1].getCol() != 4 ||
+           obstacles[1].getRow() != player.getRow())) {
         std::cout << '>';
         b = true;
       } else {
@@ -84,8 +98,8 @@ void drawTerminal(Player player, int objectsPassed,
             << '\r' << '\n';
 }
 
-bool haveCollided(Player player, Obstacle o) {
-  return player.getPos() == o.getPos();
+bool haveCollided(Player player, Obstacle o1, Obstacle o2) {
+  return player.getPos() == o1.getPos() || player.getPos() == o2.getPos();
 }
 
 void movePlayer(Player &player) {
@@ -110,7 +124,7 @@ int main() {
   srand((unsigned)time(NULL));
 
   std::deque<Obstacle> obstacles;
-  obstacles.push_back(Obstacle());
+  createObstacle(obstacles);
   Player player;
   int count = 0;
   int objectsPassed = 0;
@@ -126,13 +140,13 @@ int main() {
 
   switch (difficulty) {
   case 2:
-    countComp = 20;
+    countComp = 30;
     break;
   case 3:
-    countComp = 10;
+    countComp = 20;
     break;
   default:
-    countComp = 30;
+    countComp = 40;
   }
 
   std::thread input_thread(movePlayer, std::ref(player));
@@ -146,12 +160,12 @@ int main() {
     system("clear");
     count++;
     if (count == countComp) {
-      obstacles.push_back(Obstacle());
+      createObstacle(obstacles);
       count = 0;
     }
 
     drawTerminal(player, objectsPassed, obstacles);
-    if (haveCollided(player, obstacles[0]))
+    if (haveCollided(player, obstacles[0], obstacles[1]))
       break;
     obstacles = moveObstacles(obstacles);
 
